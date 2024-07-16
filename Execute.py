@@ -2,18 +2,18 @@
 import random
 
 
-def parse_instruction(instruction):
+def parse_instruction(instruction1):
+    instruction = instruction1
     parts = instruction.split(" ")
     op = parts[0]
     args = parts[1].split(',')
     if op in {"lw", "sw"}:
-        args = (args[0], args[1].split("(")[0], args[1].split("(")[1][:-1])
-    return op, args
+        args = [args[0], args[1].split("(")[0], args[1].split("(")[1][:-1]]
+    return [op, args]
 
 
 R_TYPE = {'add', 'sub', 'and', 'or', 'sll', 'srl', 'slt', 'sltu'}
 I_TYPE = {'lw', 'sw', 'addi', 'andi', 'ori'}
-
 
 registerFile = {
     '$zero': 0, '$at': 0, '$v0': 0, '$v1': 0, '$a0': 0, '$a1': 0, '$a2': 0, '$a3': 0,
@@ -83,9 +83,15 @@ def sltu(rd, rs, rt):
     registerFile[rd] = 1 if (registerFile[rs] & 0xFFFFFFFF) < (registerFile[rt] & 0xFFFFFFFF) else 0
 
 
+def beq(rs, rt):
+    if registerFile[rs] == registerFile[rt]:
+        return True
+    return False
+
+
 def execute_instruction(instruction):
     # op, args = parse_instruction(instruction)
-    op ,args = instruction
+    op, args = instruction
     if op == 'add':
         add(args[0], args[1], args[2])
     elif op == 'addi':
@@ -112,12 +118,11 @@ def execute_instruction(instruction):
         slt(args[0], args[1], args[2])
     elif op == 'sltu':
         sltu(args[0], args[1], args[2])
-    elif op == 'beq' :
-        beq(args[0], args[1])
+    elif op == 'beq':
+        return beq(args[0], args[1])
     else:
         raise ValueError(f"Unknown operation {op}")
     registerFile["$zero"] = 0
-
 
 
 def registerCalculation(instructions):
@@ -137,6 +142,27 @@ def registerCalculation(instructions):
     return registers
 
 
+def assembler(instructions):
+    newInstructions = []
+    instructionIndex = 0
+    count = 0
+    while instructionIndex < len(instructions) and count < 10:
+        instruction = parse_instruction(instructions[instructionIndex])
+        branchIsTaken = execute_instruction(instruction)
+        newInstructions.append(instruction + [instructionIndex])
+        opcode = instruction[0]
+
+        if opcode == "beq" and branchIsTaken:
+            constant = int(instruction[1][2])
+            if constant < 0:
+                for i in range(instructionIndex + constant + 1, instructionIndex + 1):
+                    newInstructions.append(parse_instruction(instructions[i]) + [i])
+            instructionIndex += constant
+
+        instructionIndex += 1
+        count += 1
+    return newInstructions
+
 # # Example usage:
 # instruction = "add $s0, $s1, $s2"
 # execute_instruction(instruction)
@@ -147,4 +173,3 @@ def registerCalculation(instructions):
 # registers['$s2'] = 20
 # execute_instruction("add $s0, $s1, $s2")
 # print(registers['$s0'])  # Output: 30
-
