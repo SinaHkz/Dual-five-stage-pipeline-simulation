@@ -91,7 +91,9 @@ def beq(rs, rt):
 
 def execute_instruction(instruction):
     # op, args = parse_instruction(instruction)
-    op, args = instruction
+    op = instruction[0]
+    args = instruction[1]
+
     if op == 'add':
         add(args[0], args[1], args[2])
     elif op == 'addi':
@@ -127,18 +129,19 @@ def execute_instruction(instruction):
 
 def registerCalculation(instructions):
     registers = {
-        '$zero': [0], '$at': [0], '$v0': [0], '$v1': [0], '$a0': [0], '$a1': [0], '$a2': [0], '$a3': [0],
-        '$t0': [0], '$t1': [0], '$t2': [0], '$t3': [0], '$t4': [0], '$t5': [0], '$t6': [0], '$t7': [0],
-        '$s0': [0], '$s1': [0], '$s2': [0], '$s3': [0], '$s4': [0], '$s5': [0], '$s6': [0], '$s7': [0],
-        '$t8': [0], '$t9': [0], '$k0': [0], '$k1': [0], '$gp': [0], '$sp': [0], '$fp': [0], '$ra': [0]
+        '$zero': ["-"], '$at': ["-"], '$v0': ["-"], '$v1': ["-"], '$a0': ["-"], '$a1': ["-"], '$a2': ["-"], '$a3': ["-"],
+        '$t0': ["-"], '$t1': ["-"], '$t2': ["-"], '$t3': ["-"], '$t4': ["-"], '$t5': ["-"], '$t6': ["-"], '$t7': ["-"],
+        '$s0': ["-"], '$s1': ["-"], '$s2': ["-"], '$s3': ["-"], '$s4': ["-"], '$s5': ["-"], '$s6': ["-"], '$s7': ["-"],
+        '$t8': ["-"], '$t9': ["-"], '$k0': ["-"], '$k1': ["-"], '$gp': ["-"], '$sp': ["-"], '$fp': ["-"], '$ra': ["-"]
     }
     for instruction in instructions:
+        instruction = parse_instruction(instruction)
         execute_instruction(instruction)
         for register in registers.keys():
-            if register == instruction[1][0] and instruction[0] != "sw":
+            if register == instruction[1][0] and instruction[0] != "sw" and instruction[0] != "beq":
                 registers[register].append(registerFile[register])
             else:
-                registers[register].append(0)
+                registers[register].append("-")
     return registers
 
 
@@ -146,7 +149,7 @@ def assembler(instructions):
     newInstructions = []
     instructionIndex = 0
     count = 0
-    while instructionIndex < len(instructions) and count < 10:
+    while instructionIndex < len(instructions) and count < 20:
         instruction = parse_instruction(instructions[instructionIndex])
         branchIsTaken = execute_instruction(instruction)
         newInstructions.append(instruction + [instructionIndex])
